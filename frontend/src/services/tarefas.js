@@ -15,3 +15,7 @@ export function atualizarTarefa(id, dados) {
 export function excluirTarefa(id) {
   return api.delete(`/tarefas/${id}/`)
 }
+
+export function compartilharTarefa(tarefaId, dados) {
+  return api.post(`/tarefas/${tarefaId}/compartilhamentos/`, dados)
+}

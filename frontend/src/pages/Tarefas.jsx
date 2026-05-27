@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa } from '../services/tarefas'
+import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa } from '../services/tarefas'
 import { listarCategorias } from '../services/categorias'
 
 export default function Tarefas() {
@@ -9,6 +9,9 @@ export default function Tarefas() {
   const [categorias, setCategorias] = useState([])
   const [titulo, setTitulo] = useState('')
   const [categoria, setCategoria] = useState('')
+  const [compartilhando, setCompartilhando] = useState(null)
+  const [usernameCompartilhar, setUsernameCompartilhar] = useState('')
+  const [permissao, setPermissao] = useState('leitura')
   const [erro, setErro] = useState('')
 
   useEffect(() => {
@@ -67,6 +70,19 @@ export default function Tarefas() {
     }
   }
 
+  async function handleCompartilhar(e) {
+    e.preventDefault()
+    setErro('')
+    try {
+      await compartilharTarefa(compartilhando, { usuario_username: usernameCompartilhar, permissao })
+      setCompartilhando(null)
+      setUsernameCompartilhar('')
+      setPermissao('leitura')
+    } catch {
+      setErro('Erro ao compartilhar tarefa. Verifique o username.')
+    }
+  }
+
   return (
     <div>
       <h1>Minhas Tarefas</h1>
@@ -100,7 +116,26 @@ export default function Tarefas() {
               onChange={() => handleConcluir(tarefa)}
             />
             {tarefa.titulo}
+            <button onClick={() => setCompartilhando(tarefa.id)}>Compartilhar</button>
             <button onClick={() => handleExcluir(tarefa.id)}>Excluir</button>
+
+            {compartilhando === tarefa.id && (
+              <form onSubmit={handleCompartilhar}>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={usernameCompartilhar}
+                  onChange={(e) => setUsernameCompartilhar(e.target.value)}
+                  required
+                />
+                <select value={permissao} onChange={(e) => setPermissao(e.target.value)}>
+                  <option value="leitura">Leitura</option>
+                  <option value="edicao">Edição</option>
+                </select>
+                <button type="submit">Confirmar</button>
+                <button type="button" onClick={() => setCompartilhando(null)}>Cancelar</button>
+              </form>
+            )}
           </li>
         ))}
       </ul>
