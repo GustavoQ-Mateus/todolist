@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { listarTarefas, criarTarefa } from '../services/tarefas'
+import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa } from '../services/tarefas'
 
 export default function Tarefas() {
   const { sair } = useAuth()
@@ -33,6 +33,24 @@ export default function Tarefas() {
     }
   }
 
+  async function handleConcluir(tarefa) {
+    try {
+      await atualizarTarefa(tarefa.id, { concluida: !tarefa.concluida })
+      buscarTarefas()
+    } catch {
+      setErro('Erro ao atualizar tarefa.')
+    }
+  }
+
+  async function handleExcluir(id) {
+    try {
+      await excluirTarefa(id)
+      buscarTarefas()
+    } catch {
+      setErro('Erro ao excluir tarefa.')
+    }
+  }
+
   return (
     <div>
       <h1>Minhas Tarefas</h1>
@@ -53,7 +71,15 @@ export default function Tarefas() {
 
       <ul>
         {tarefas.map((tarefa) => (
-          <li key={tarefa.id}>{tarefa.titulo}</li>
+          <li key={tarefa.id}>
+            <input
+              type="checkbox"
+              checked={tarefa.concluida}
+              onChange={() => handleConcluir(tarefa)}
+            />
+            {tarefa.titulo}
+            <button onClick={() => handleExcluir(tarefa.id)}>Excluir</button>
+          </li>
         ))}
       </ul>
     </div>
