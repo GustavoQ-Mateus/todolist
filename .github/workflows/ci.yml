@@ -95,3 +95,32 @@ jobs:
       - name: Derrubar aplicacao
         if: always()
         run: docker compose down
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [testes-backend, testes-selenium]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy na EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if [ ! -d "/home/ubuntu/todolist" ]; then
+              git clone https://github.com/GustavoQ-Mateus/todolist.git /home/ubuntu/todolist
+            fi
+            cd /home/ubuntu/todolist
+            git pull origin main
+            cat > .env <<EOF
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            POSTGRES_DB=todolist
+            POSTGRES_USER=postgres
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_HOST=db
+            POSTGRES_PORT=5432
+            VITE_API_URL=http://${{ secrets.EC2_HOST }}:8000/api
+            EOF
+            docker compose up -d --build
