@@ -7,3 +7,7 @@ export function listarCategorias() {
 export function criarCategoria(dados) {
   return api.post('/categorias/', dados)
 }
+
+export function excluirCategoria(id) {
+  return api.delete(`/categorias/${id}/`)
+}

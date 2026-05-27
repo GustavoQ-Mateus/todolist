@@ -19,3 +19,7 @@ export function excluirTarefa(id) {
 export function compartilharTarefa(tarefaId, dados) {
   return api.post(`/tarefas/${tarefaId}/compartilhamentos/`, dados)
 }
+
+export function listarCompartilhamentos(tarefaId) {
+  return api.get(`/tarefas/${tarefaId}/compartilhamentos/`)
+}

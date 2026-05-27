@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
-import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa } from '../services/tarefas'
-import { listarCategorias } from '../services/categorias'
+import { Plus, Trash2, Share2, X, Pencil, Check, Tag } from 'lucide-react'
+import Layout from '../components/Layout'
+import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa, listarCompartilhamentos } from '../services/tarefas'
+import { listarCategorias, criarCategoria, excluirCategoria } from '../services/categorias'
 
 export default function Tarefas() {
-  const { sair } = useAuth()
   const [tarefas, setTarefas] = useState([])
   const [categorias, setCategorias] = useState([])
+
   const [titulo, setTitulo] = useState('')
+  const [descricao, setDescricao] = useState('')
   const [categoria, setCategoria] = useState('')
+  const [prioridade, setPrioridade] = useState('media')
+  const [prazo, setPrazo] = useState('')
+
+  const [editando, setEditando] = useState(null)
+  const [editTitulo, setEditTitulo] = useState('')
+  const [editDescricao, setEditDescricao] = useState('')
+  const [editPrioridade, setEditPrioridade] = useState('media')
+  const [editCategoria, setEditCategoria] = useState('')
+  const [editPrazo, setEditPrazo] = useState('')
+
   const [compartilhando, setCompartilhando] = useState(null)
   const [usernameCompartilhar, setUsernameCompartilhar] = useState('')
   const [permissao, setPermissao] = useState('leitura')
+  const [compartilhamentos, setCompartilhamentos] = useState([])
+
+  const [novaCategoria, setNovaCategoria] = useState('')
+  const [criandoCategoria, setCriandoCategoria] = useState(false)
+
   const [filtros, setFiltros] = useState({ concluida: '', categoria: '', prioridade: '' })
   const [erro, setErro] = useState('')
 
@@ -37,23 +54,72 @@ export default function Tarefas() {
     try {
       const { data } = await listarCategorias()
       setCategorias(data.results)
-    } catch {
-      setErro('Erro ao carregar categorias.')
-    }
+    } catch {}
   }
 
   async function handleCriar(e) {
     e.preventDefault()
     setErro('')
-    const dados = { titulo }
+    const dados = { titulo, descricao, prioridade }
     if (categoria) dados.categoria = categoria
+    if (prazo) dados.prazo = prazo
     try {
       await criarTarefa(dados)
       setTitulo('')
+      setDescricao('')
       setCategoria('')
+      setPrioridade('media')
+      setPrazo('')
       buscarTarefas()
     } catch {
       setErro('Erro ao criar tarefa.')
+    }
+  }
+
+  async function handleCriarCategoria(e) {
+    e.preventDefault()
+    setErro('')
+    try {
+      await criarCategoria({ nome: novaCategoria })
+      setNovaCategoria('')
+      setCriandoCategoria(false)
+      buscarCategorias()
+    } catch {
+      setErro('Erro ao criar categoria.')
+    }
+  }
+
+  async function handleExcluirCategoria(id) {
+    try {
+      await excluirCategoria(id)
+      buscarCategorias()
+      buscarTarefas()
+    } catch {
+      setErro('Erro ao excluir categoria.')
+    }
+  }
+
+  function abrirEdicao(tarefa) {
+    setEditando(tarefa.id)
+    setEditTitulo(tarefa.titulo)
+    setEditDescricao(tarefa.descricao || '')
+    setEditPrioridade(tarefa.prioridade)
+    setEditCategoria(tarefa.categoria || '')
+    setEditPrazo(tarefa.prazo || '')
+    setCompartilhando(null)
+  }
+
+  async function handleEditar(e, id) {
+    e.preventDefault()
+    setErro('')
+    const dados = { titulo: editTitulo, descricao: editDescricao, prioridade: editPrioridade, prazo: editPrazo || null }
+    dados.categoria = editCategoria || null
+    try {
+      await atualizarTarefa(id, dados)
+      setEditando(null)
+      buscarTarefas()
+    } catch {
+      setErro('Erro ao editar tarefa.')
     }
   }
 
@@ -75,16 +141,32 @@ export default function Tarefas() {
     }
   }
 
+  async function abrirCompartilhamento(tarefaId) {
+    if (compartilhando === tarefaId) {
+      setCompartilhando(null)
+      return
+    }
+    setCompartilhando(tarefaId)
+    setEditando(null)
+    try {
+      const { data } = await listarCompartilhamentos(tarefaId)
+      setCompartilhamentos(data.results || data)
+    } catch {
+      setCompartilhamentos([])
+    }
+  }
+
   async function handleCompartilhar(e) {
     e.preventDefault()
     setErro('')
     try {
       await compartilharTarefa(compartilhando, { usuario_username: usernameCompartilhar, permissao })
-      setCompartilhando(null)
       setUsernameCompartilhar('')
       setPermissao('leitura')
+      const { data } = await listarCompartilhamentos(compartilhando)
+      setCompartilhamentos(data.results || data)
     } catch {
-      setErro('Erro ao compartilhar. Verifique o username.')
+      setErro('Usuário não encontrado ou já compartilhado.')
     }
   }
 
@@ -92,84 +174,231 @@ export default function Tarefas() {
     setFiltros({ ...filtros, [e.target.name]: e.target.value })
   }
 
+  const prioridadeCor = { baixa: 'text-green-600', media: 'text-yellow-600', alta: 'text-red-500' }
+
+  const inputClass = 'border border-gray-200 rounded px-3 py-2 text-sm focus:border-primary transition-colors'
+  const selectClass = 'border border-gray-200 rounded px-3 py-1.5 text-sm focus:border-primary transition-colors bg-white text-gray-700'
+
   return (
-    <div>
-      <h1>Minhas Tarefas</h1>
-      <button onClick={sair}>Sair</button>
+    <Layout titulo="Tarefas">
+      <div className="flex flex-col gap-6 max-w-3xl">
 
-      <div>
-        <select name="concluida" value={filtros.concluida} onChange={handleFiltro}>
-          <option value="">Todas</option>
-          <option value="true">Concluídas</option>
-          <option value="false">Pendentes</option>
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select name="concluida" value={filtros.concluida} onChange={handleFiltro} className={selectClass}>
+            <option value="">Todas</option>
+            <option value="true">Concluídas</option>
+            <option value="false">Pendentes</option>
+          </select>
+          <select name="prioridade" value={filtros.prioridade} onChange={handleFiltro} className={selectClass}>
+            <option value="">Prioridade</option>
+            <option value="baixa">Baixa</option>
+            <option value="media">Média</option>
+            <option value="alta">Alta</option>
+          </select>
+          <select name="categoria" value={filtros.categoria} onChange={handleFiltro} className={selectClass}>
+            <option value="">Categoria</option>
+            {categorias.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.nome}</option>
+            ))}
+          </select>
 
-        <select name="prioridade" value={filtros.prioridade} onChange={handleFiltro}>
-          <option value="">Qualquer prioridade</option>
-          <option value="baixa">Baixa</option>
-          <option value="media">Média</option>
-          <option value="alta">Alta</option>
-        </select>
-
-        <select name="categoria" value={filtros.categoria} onChange={handleFiltro}>
-          <option value="">Qualquer categoria</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.nome}</option>
-          ))}
-        </select>
-      </div>
-
-      <form onSubmit={handleCriar}>
-        <input
-          type="text"
-          placeholder="Nova tarefa"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          required
-        />
-        <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-          <option value="">Sem categoria</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.nome}</option>
-          ))}
-        </select>
-        <button type="submit">Adicionar</button>
-      </form>
-
-      {erro && <p>{erro}</p>}
-
-      <ul>
-        {tarefas.map((tarefa) => (
-          <li key={tarefa.id}>
-            <input
-              type="checkbox"
-              checked={tarefa.concluida}
-              onChange={() => handleConcluir(tarefa)}
-            />
-            {tarefa.titulo}
-            <button onClick={() => setCompartilhando(tarefa.id)}>Compartilhar</button>
-            <button onClick={() => handleExcluir(tarefa.id)}>Excluir</button>
-
-            {compartilhando === tarefa.id && (
-              <form onSubmit={handleCompartilhar}>
+          <div className="ml-auto">
+            {criandoCategoria ? (
+              <form onSubmit={handleCriarCategoria} className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Username"
-                  value={usernameCompartilhar}
-                  onChange={(e) => setUsernameCompartilhar(e.target.value)}
+                  placeholder="Nome da categoria"
+                  value={novaCategoria}
+                  onChange={(e) => setNovaCategoria(e.target.value)}
                   required
+                  autoFocus
+                  className={inputClass}
                 />
-                <select value={permissao} onChange={(e) => setPermissao(e.target.value)}>
-                  <option value="leitura">Leitura</option>
-                  <option value="edicao">Edição</option>
-                </select>
-                <button type="submit">Confirmar</button>
-                <button type="button" onClick={() => setCompartilhando(null)}>Cancelar</button>
+                <button type="submit" className="bg-primary text-white text-sm px-3 py-1.5 rounded hover:bg-primary-light transition-colors">
+                  Criar
+                </button>
+                <button type="button" onClick={() => setCriandoCategoria(false)} className="p-1.5 rounded text-gray-400 hover:text-gray-600 transition-colors">
+                  <X size={13} />
+                </button>
               </form>
+            ) : (
+              <button
+                onClick={() => setCriandoCategoria(true)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded hover:text-primary hover:border-primary transition-colors"
+              >
+                <Tag size={13} />
+                Nova categoria
+              </button>
             )}
-          </li>
-        ))}
-      </ul>
-    </div>
+          </div>
+        </div>
+
+        {categorias.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {categorias.map((cat) => (
+              <span key={cat.id} className="flex items-center gap-1 bg-primary-muted text-primary text-xs px-2 py-0.5 rounded">
+                {cat.nome}
+                <button type="button" onClick={() => handleExcluirCategoria(cat.id)} className="hover:text-red-500 transition-colors" aria-label="Excluir categoria">
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleCriar} className="flex flex-col gap-2 bg-white border border-gray-100 rounded p-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Título da tarefa..."
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              required
+              className={`flex-1 ${inputClass}`}
+            />
+            <select value={prioridade} onChange={(e) => setPrioridade(e.target.value)} className={selectClass}>
+              <option value="baixa">Baixa</option>
+              <option value="media">Média</option>
+              <option value="alta">Alta</option>
+            </select>
+            <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className={selectClass}>
+              <option value="">Sem categoria</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <textarea
+              placeholder="Descrição (opcional)..."
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              rows={2}
+              className={`resize-none flex-1 ${inputClass}`}
+            />
+            <div className="flex flex-col gap-1 justify-start">
+              <label className="text-xs text-gray-400">Prazo</label>
+              <input
+                type="date"
+                value={prazo}
+                onChange={(e) => setPrazo(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button type="submit" className="flex items-center gap-1.5 bg-primary text-white text-sm px-4 py-2 rounded hover:bg-primary-light transition-colors">
+              <Plus size={14} />
+              Adicionar
+            </button>
+          </div>
+        </form>
+
+        {erro && <p className="text-sm text-red-500">{erro}</p>}
+
+        <div className="flex flex-col divide-y divide-gray-100 border border-gray-100 rounded bg-white">
+          {tarefas.length === 0 && (
+            <p className="text-sm text-gray-400 px-4 py-6 text-center">Nenhuma tarefa encontrada.</p>
+          )}
+          {tarefas.map((tarefa) => (
+            <div key={tarefa.id} className="flex flex-col">
+
+              <div className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={tarefa.concluida}
+                  onChange={() => handleConcluir(tarefa)}
+                  className="accent-primary w-4 h-4 mt-0.5 cursor-pointer"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm ${tarefa.concluida ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                    {tarefa.titulo}
+                  </p>
+                  {tarefa.descricao && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{tarefa.descricao}</p>
+                  )}
+                  {tarefa.prazo && (
+                    <p className="text-xs text-gray-400 mt-0.5">Prazo: {tarefa.prazo}</p>
+                  )}
+                </div>
+                <span className={`text-xs font-medium shrink-0 ${prioridadeCor[tarefa.prioridade]}`}>
+                  {tarefa.prioridade}
+                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => abrirEdicao(tarefa)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Editar">
+                    <Pencil size={13} />
+                  </button>
+                  <button onClick={() => abrirCompartilhamento(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Compartilhar">
+                    <Share2 size={13} />
+                  </button>
+                  <button onClick={() => handleExcluir(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" aria-label="Excluir">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {editando === tarefa.id && (
+                <form onSubmit={(e) => handleEditar(e, tarefa.id)} className="flex flex-col gap-2 px-4 py-3 bg-gray-50 border-t border-gray-100">
+                  <div className="flex gap-2">
+                    <input type="text" value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} required className={`flex-1 ${inputClass}`} placeholder="Título" />
+                    <select value={editPrioridade} onChange={(e) => setEditPrioridade(e.target.value)} className={selectClass}>
+                      <option value="baixa">Baixa</option>
+                      <option value="media">Média</option>
+                      <option value="alta">Alta</option>
+                    </select>
+                    <select value={editCategoria} onChange={(e) => setEditCategoria(e.target.value)} className={selectClass}>
+                      <option value="">Sem categoria</option>
+                      {categorias.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <textarea value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} rows={2} placeholder="Descrição..." className={`resize-none flex-1 ${inputClass}`} />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-400">Prazo</label>
+                      <input type="date" value={editPrazo} onChange={(e) => setEditPrazo(e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button type="submit" className="flex items-center gap-1.5 bg-primary text-white text-sm px-3 py-1.5 rounded hover:bg-primary-light transition-colors">
+                      <Check size={13} /> Salvar
+                    </button>
+                    <button type="button" onClick={() => setEditando(null)} className="p-1.5 rounded text-gray-400 hover:text-gray-600 transition-colors">
+                      <X size={13} />
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {compartilhando === tarefa.id && (
+                <div className="flex flex-col gap-2 px-4 py-3 bg-primary-muted border-t border-gray-100">
+                  {compartilhamentos.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-1">
+                      {compartilhamentos.map((c) => (
+                        <span key={c.id} className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                          {c.usuario_username || c.usuario} · {c.permissao}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <form onSubmit={handleCompartilhar} className="flex items-center gap-2">
+                    <input type="text" placeholder="Username" value={usernameCompartilhar} onChange={(e) => setUsernameCompartilhar(e.target.value)} required className={inputClass} />
+                    <select value={permissao} onChange={(e) => setPermissao(e.target.value)} className={selectClass}>
+                      <option value="leitura">Leitura</option>
+                      <option value="edicao">Edição</option>
+                    </select>
+                    <button type="submit" className="bg-primary text-white text-sm px-3 py-1.5 rounded hover:bg-primary-light transition-colors">Compartilhar</button>
+                    <button type="button" onClick={() => setCompartilhando(null)} className="p-1.5 rounded text-gray-400 hover:text-gray-600 transition-colors"><X size={13} /></button>
+                  </form>
+                </div>
+              )}
+
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </Layout>
   )
 }
