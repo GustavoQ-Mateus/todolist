@@ -34,6 +34,9 @@ docker compose up -d --build
 - Front-end: http://localhost:5173
 - API: http://localhost:8000/api
 
+**Demo online (AWS EC2):**
+- http://35.153.162.1:5173
+
 ---
 
 ## Minhas Decisões de Projeto
