@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
@@ -45,6 +45,7 @@ export default function Login() {
         {erro && <p>{erro}</p>}
         <button type="submit">Entrar</button>
       </form>
+      <p><Link to="/cadastro">Criar conta</Link></p>
     </div>
   )
 }
