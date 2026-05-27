@@ -1,11 +1,15 @@
 from rest_framework import generics, permissions
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Tarefa, Categoria, CompartilhamentoTarefa
 from .serializers import TarefaSerializer, CategoriaSerializer, CompartilhamentoSerializer
+from .filters import TarefaFilter
 
 
 class TarefaListCreateView(generics.ListCreateAPIView):
     serializer_class = TarefaSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TarefaFilter
 
     def get_queryset(self):
         return Tarefa.objects.filter(criado_por=self.request.user)

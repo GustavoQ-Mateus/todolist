@@ -12,16 +12,21 @@ export default function Tarefas() {
   const [compartilhando, setCompartilhando] = useState(null)
   const [usernameCompartilhar, setUsernameCompartilhar] = useState('')
   const [permissao, setPermissao] = useState('leitura')
+  const [filtros, setFiltros] = useState({ concluida: '', categoria: '', prioridade: '' })
   const [erro, setErro] = useState('')
 
   useEffect(() => {
     buscarTarefas()
     buscarCategorias()
-  }, [])
+  }, [filtros])
 
   async function buscarTarefas() {
     try {
-      const { data } = await listarTarefas()
+      const params = {}
+      if (filtros.concluida !== '') params.concluida = filtros.concluida
+      if (filtros.categoria !== '') params.categoria = filtros.categoria
+      if (filtros.prioridade !== '') params.prioridade = filtros.prioridade
+      const { data } = await listarTarefas(params)
       setTarefas(data.results)
     } catch {
       setErro('Erro ao carregar tarefas.')
@@ -79,14 +84,40 @@ export default function Tarefas() {
       setUsernameCompartilhar('')
       setPermissao('leitura')
     } catch {
-      setErro('Erro ao compartilhar tarefa. Verifique o username.')
+      setErro('Erro ao compartilhar. Verifique o username.')
     }
+  }
+
+  function handleFiltro(e) {
+    setFiltros({ ...filtros, [e.target.name]: e.target.value })
   }
 
   return (
     <div>
       <h1>Minhas Tarefas</h1>
       <button onClick={sair}>Sair</button>
+
+      <div>
+        <select name="concluida" value={filtros.concluida} onChange={handleFiltro}>
+          <option value="">Todas</option>
+          <option value="true">Concluídas</option>
+          <option value="false">Pendentes</option>
+        </select>
+
+        <select name="prioridade" value={filtros.prioridade} onChange={handleFiltro}>
+          <option value="">Qualquer prioridade</option>
+          <option value="baixa">Baixa</option>
+          <option value="media">Média</option>
+          <option value="alta">Alta</option>
+        </select>
+
+        <select name="categoria" value={filtros.categoria} onChange={handleFiltro}>
+          <option value="">Qualquer categoria</option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.nome}</option>
+          ))}
+        </select>
+      </div>
 
       <form onSubmit={handleCriar}>
         <input
