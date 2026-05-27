@@ -31,20 +31,25 @@ export default function Tarefas() {
 
   const [filtros, setFiltros] = useState({ concluida: '', categoria: '', prioridade: '' })
   const [erro, setErro] = useState('')
+  const [pagina, setPagina] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const PAGE_SIZE = 10
 
   useEffect(() => {
-    buscarTarefas()
+    buscarTarefas(1)
     buscarCategorias()
   }, [filtros])
 
-  async function buscarTarefas() {
+  async function buscarTarefas(pag = pagina) {
     try {
-      const params = {}
+      const params = { page: pag }
       if (filtros.concluida !== '') params.concluida = filtros.concluida
       if (filtros.categoria !== '') params.categoria = filtros.categoria
       if (filtros.prioridade !== '') params.prioridade = filtros.prioridade
       const { data } = await listarTarefas(params)
       setTarefas(data.results)
+      setTotalPaginas(Math.ceil(data.count / PAGE_SIZE))
+      setPagina(pag)
     } catch {
       setErro('Erro ao carregar tarefas.')
     }
@@ -171,6 +176,7 @@ export default function Tarefas() {
   }
 
   function handleFiltro(e) {
+    setPagina(1)
     setFiltros({ ...filtros, [e.target.name]: e.target.value })
   }
 
@@ -397,6 +403,38 @@ export default function Tarefas() {
             </div>
           ))}
         </div>
+
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={() => buscarTarefas(pagina - 1)}
+              disabled={pagina === 1}
+              className="px-3 py-1.5 text-sm rounded border border-gray-200 text-gray-600 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => buscarTarefas(p)}
+                className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                  p === pagina
+                    ? 'bg-primary text-white border-primary'
+                    : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => buscarTarefas(pagina + 1)}
+              disabled={pagina === totalPaginas}
+              className="px-3 py-1.5 text-sm rounded border border-gray-200 text-gray-600 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Próxima
+            </button>
+          </div>
+        )}
 
       </div>
     </Layout>
