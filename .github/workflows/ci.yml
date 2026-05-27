@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  testes:
+  testes-backend:
     runs-on: ubuntu-latest
 
     services:
@@ -48,3 +48,50 @@ jobs:
       - name: Rodar testes
         working-directory: backend
         run: pytest apps/usuarios/tests.py apps/tarefas/tests.py -v
+
+  testes-selenium:
+    runs-on: ubuntu-latest
+    needs: testes-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Docker Compose
+        run: docker compose version
+
+      - name: Criar arquivo .env
+        run: |
+          echo "SECRET_KEY=chave-secreta-para-ci" >> .env
+          echo "POSTGRES_DB=todolist" >> .env
+          echo "POSTGRES_USER=postgres" >> .env
+          echo "POSTGRES_PASSWORD=postgres" >> .env
+          echo "POSTGRES_HOST=db" >> .env
+          echo "POSTGRES_PORT=5432" >> .env
+
+      - name: Subir aplicacao
+        run: docker compose up -d --build
+
+      - name: Aguardar servicos ficarem prontos
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/usuarios/cadastro/ -X POST && break
+            sleep 3
+          done
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias Selenium
+        run: pip install -r selenium_tests/requirements.txt
+
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Rodar testes Selenium
+        run: pytest selenium_tests/ -v
+
+      - name: Derrubar aplicacao
+        if: always()
+        run: docker compose down
