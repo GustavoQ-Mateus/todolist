@@ -1,10 +1,50 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+
 export default function Login() {
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState('')
+  const { entrar } = useAuth()
+  const navegar = useNavigate()
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setErro('')
+    try {
+      await entrar(email, senha)
+      navegar('/tarefas')
+    } catch {
+      setErro('Email ou senha inválidos.')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded shadow w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Entrar</h1>
-        <p className="text-gray-400 text-sm">Em breve...</p>
-      </div>
+    <div>
+      <h1>Entrar</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Senha</label>
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+          />
+        </div>
+        {erro && <p>{erro}</p>}
+        <button type="submit">Entrar</button>
+      </form>
     </div>
   )
 }
