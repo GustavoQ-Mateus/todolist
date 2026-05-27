@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa } from '../services/tarefas'
+import { listarCategorias } from '../services/categorias'
 
 export default function Tarefas() {
   const { sair } = useAuth()
   const [tarefas, setTarefas] = useState([])
+  const [categorias, setCategorias] = useState([])
   const [titulo, setTitulo] = useState('')
+  const [categoria, setCategoria] = useState('')
   const [erro, setErro] = useState('')
 
   useEffect(() => {
     buscarTarefas()
+    buscarCategorias()
   }, [])
 
   async function buscarTarefas() {
@@ -21,12 +25,24 @@ export default function Tarefas() {
     }
   }
 
+  async function buscarCategorias() {
+    try {
+      const { data } = await listarCategorias()
+      setCategorias(data.results)
+    } catch {
+      setErro('Erro ao carregar categorias.')
+    }
+  }
+
   async function handleCriar(e) {
     e.preventDefault()
     setErro('')
+    const dados = { titulo }
+    if (categoria) dados.categoria = categoria
     try {
-      await criarTarefa({ titulo })
+      await criarTarefa(dados)
       setTitulo('')
+      setCategoria('')
       buscarTarefas()
     } catch {
       setErro('Erro ao criar tarefa.')
@@ -64,6 +80,12 @@ export default function Tarefas() {
           onChange={(e) => setTitulo(e.target.value)}
           required
         />
+        <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+          <option value="">Sem categoria</option>
+          {categorias.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.nome}</option>
+          ))}
+        </select>
         <button type="submit">Adicionar</button>
       </form>
 
