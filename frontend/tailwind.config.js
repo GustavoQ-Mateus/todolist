@@ -9,11 +9,19 @@ export default {
         primary: {
           DEFAULT: '#173753',
           light: '#1e4a6e',
-          muted: '#e8eef3',
+          muted: '#eef2f6',
         },
       },
+      fontSize: {
+        xs: ['12px', { lineHeight: '1.5' }],
+        sm: ['14px', { lineHeight: '1.5' }],
+        base: ['16px', { lineHeight: '1.75' }],
+      },
       borderRadius: {
-        corporate: '4px',
+        DEFAULT: '4px',
+      },
+      transitionDuration: {
+        DEFAULT: '150ms',
       },
     },
   },
