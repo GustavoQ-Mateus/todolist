@@ -8,4 +8,16 @@
   body {
     @apply font-inter bg-gray-50 text-gray-800 antialiased;
   }
+
+  button, a, [role="button"] {
+    @apply cursor-pointer;
+  }
+
+  input, select, textarea {
+    @apply outline-none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-primary ring-offset-1;
+  }
 }
