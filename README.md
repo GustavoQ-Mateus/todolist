@@ -1,13 +1,12 @@
 # ListTodo
 
-Este projeto é meu teste prático. O objetivo foi construir um gerenciador de tarefas que fosse além do básico, focando em segurança (JWT), organização (Categorias) e colaboração (Compartilhamento).
+Este projeto é meu teste prático para a Advice Health. O objetivo foi construir um gerenciador de tarefas que fosse além do básico, focando em segurança (JWT), organização (Categorias) e colaboração (Compartilhamento).
 
 ---
 
 ## Como subir o projeto
 
 Para facilitar a avaliação, a aplicação está totalmente dockerizada.
-Clone o repositório:
 
 ```bash
 git clone https://github.com/GustavoQ-Mateus/todolist.git
@@ -25,8 +24,6 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 ```
 
-Rode o comando:
-
 ```bash
 docker compose up -d --build
 ```
@@ -34,8 +31,7 @@ docker compose up -d --build
 - Front-end: http://localhost:5173
 - API: http://localhost:8000/api
 
-**Demo online (AWS EC2):**
-- http://35.153.162.1:5173
+**Demo online (AWS EC2):** http://35.153.162.1:5173
 
 ---
 
@@ -43,17 +39,13 @@ docker compose up -d --build
 
 Em vez de complicar a arquitetura, tentei ser direto e eficiente, seguindo o que o mercado espera de um código limpo:
 
-# Lógica no Back-end
- Garanti que o Front-end seja apenas uma camada visual. Toda a regra de "quem pode ver o quê" e o vínculo automático do `criado_por` acontece no Django. Isso evita que um usuário mal-intencionado manipule dados via requisições manuais.
+**Lógica no Back-end:** Garanti que o Front-end seja apenas uma camada visual. Toda a regra de "quem pode ver o quê" e o vínculo automático do `criado_por` acontece no Django. Isso evita que um usuário mal-intencionado manipule dados via requisições manuais.
 
-# Organização do Código
- Separei as configurações do Django (settings) para que o ambiente de desenvolvimento não misture chaves e comportamentos com o que seria uma produção real.
+**Organização do Código:** Separei as configurações do Django (settings) para que o ambiente de desenvolvimento não misture chaves e comportamentos com o que seria uma produção real.
 
-# Segurança com JWT
- Escolhi o SimpleJWT por ser o padrão de mercado para SPAs, garantindo que a autenticação seja stateless e segura.
+**Segurança com JWT:** Escolhi o SimpleJWT por ser o padrão de mercado para SPAs, garantindo que a autenticação seja stateless e segura.
 
-# Filtros Eficientes
- Usei o `django-filter` para que a busca por tarefas (concluídas, prioridade, etc.) seja feita diretamente no banco de dados, e não "na mão" via código, o que melhora a performance.
+**Filtros Eficientes:** Usei o `django-filter` para que a busca por tarefas (concluídas, prioridade, etc.) seja feita diretamente no banco de dados, e não "na mão" via código, o que melhora a performance.
 
 ---
 
@@ -87,7 +79,7 @@ Autenticação via Bearer Token — `Authorization: Bearer <access_token>`
 
 ## Testes e Qualidade
 
-Como o teste foca em Back-end, dei uma atenção à cobertura do pytest:
+Como o teste foca em Back-end, dei uma atenção especial à cobertura do pytest:
 
 **Testes Unitários:** Cobrem desde a criação de usuário até as permissões complexas de compartilhamento.
 
@@ -104,9 +96,15 @@ pytest selenium_tests/ -v
 
 ---
 
-## CI/CD
+## CI/CD e Deploy
 
-Configurei um workflow no GitHub Actions. Toda vez que faço um push, o GitHub sobe o banco de dados, roda os testes de backend e depois os testes de Selenium. Isso garante que a `main` esteja sempre funcional.
+Configurei um workflow no GitHub Actions com três jobs em sequência:
+
+1. **testes-backend** — sobe PostgreSQL e roda o pytest
+2. **testes-selenium** — sobe a aplicação via Docker Compose e roda os testes com Chrome headless
+3. **deploy** — via SSH, faz pull do repositório e reinicia os containers na instância EC2 da AWS
+
+Nenhum código chega à `main` sem passar pelos testes. E a cada push aprovado, o deploy na EC2 acontece automaticamente.
 
 ---
 
