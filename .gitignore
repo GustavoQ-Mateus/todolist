@@ -10,3 +10,4 @@ dist/
 .DS_Store
 2026-*.txt
 teste.md
+*.pem
