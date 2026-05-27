@@ -1,7 +1,7 @@
 import api from './api'
 
-export function listarTarefas() {
-  return api.get('/tarefas/')
+export function listarTarefas(filtros = {}) {
+  return api.get('/tarefas/', { params: filtros })
 }
 
 export function criarTarefa(dados) {
