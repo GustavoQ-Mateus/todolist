@@ -24,17 +24,26 @@ class TarefaSerializer(serializers.ModelSerializer):
 
 class CompartilhamentoSerializer(serializers.ModelSerializer):
     usuario_username = serializers.CharField(write_only=True)
+    usuario_nome = serializers.CharField(source='usuario.username', read_only=True)
 
     class Meta:
         model = CompartilhamentoTarefa
-        fields = ['id', 'tarefa', 'usuario_username', 'permissao']
+        fields = ['id', 'tarefa', 'usuario_username', 'usuario_nome', 'permissao']
         read_only_fields = ['tarefa']
 
     def validate_usuario_username(self, valor):
         try:
-            return Usuario.objects.get(username=valor)
+            usuario = Usuario.objects.get(username=valor)
         except Usuario.DoesNotExist:
             raise serializers.ValidationError('Usuário não encontrado.')
+        return usuario
+
+    def validate(self, attrs):
+        usuario = attrs.get('usuario_username')
+        tarefa = self.context.get('tarefa')
+        if tarefa and usuario and CompartilhamentoTarefa.objects.filter(tarefa=tarefa, usuario=usuario).exists():
+            raise serializers.ValidationError({'usuario_username': 'Esta tarefa já foi compartilhada com este usuário.'})
+        return attrs
 
     def create(self, validated_data):
         usuario = validated_data.pop('usuario_username')
