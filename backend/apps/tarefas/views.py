@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.exceptions import NotFound, PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Tarefa, Categoria, CompartilhamentoTarefa
 from .serializers import TarefaSerializer, CategoriaSerializer, CompartilhamentoSerializer
@@ -50,5 +51,16 @@ class CompartilhamentoListCreateView(generics.ListCreateAPIView):
         return CompartilhamentoTarefa.objects.filter(tarefa__criado_por=self.request.user, tarefa_id=self.kwargs['tarefa_id'])
 
     def perform_create(self, serializer):
-        tarefa = Tarefa.objects.get(pk=self.kwargs['tarefa_id'], criado_por=self.request.user)
+        try:
+            tarefa = Tarefa.objects.get(pk=self.kwargs['tarefa_id'], criado_por=self.request.user)
+        except Tarefa.DoesNotExist:
+            raise NotFound('Tarefa não encontrada.')
         serializer.save(tarefa=tarefa)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        try:
+            context['tarefa'] = Tarefa.objects.get(pk=self.kwargs['tarefa_id'], criado_por=self.request.user)
+        except Tarefa.DoesNotExist:
+            pass
+        return context

@@ -25,6 +25,7 @@ export default function Tarefas() {
   const [usernameCompartilhar, setUsernameCompartilhar] = useState('')
   const [permissao, setPermissao] = useState('leitura')
   const [compartilhamentos, setCompartilhamentos] = useState([])
+  const [erroCompartilhar, setErroCompartilhar] = useState('')
 
   const [novaCategoria, setNovaCategoria] = useState('')
   const [criandoCategoria, setCriandoCategoria] = useState(false)
@@ -149,9 +150,11 @@ export default function Tarefas() {
   async function abrirCompartilhamento(tarefaId) {
     if (compartilhando === tarefaId) {
       setCompartilhando(null)
+      setErroCompartilhar('')
       return
     }
     setCompartilhando(tarefaId)
+    setErroCompartilhar('')
     setEditando(null)
     try {
       const { data } = await listarCompartilhamentos(tarefaId)
@@ -163,15 +166,21 @@ export default function Tarefas() {
 
   async function handleCompartilhar(e) {
     e.preventDefault()
-    setErro('')
+    setErroCompartilhar('')
     try {
       await compartilharTarefa(compartilhando, { usuario_username: usernameCompartilhar, permissao })
       setUsernameCompartilhar('')
       setPermissao('leitura')
       const { data } = await listarCompartilhamentos(compartilhando)
       setCompartilhamentos(data.results || data)
-    } catch {
-      setErro('Usuário não encontrado ou já compartilhado.')
+    } catch (err) {
+      const data = err.response?.data
+      const msg =
+        data?.usuario_username?.[0] ||
+        data?.non_field_errors?.[0] ||
+        data?.detail ||
+        'Erro ao compartilhar.'
+      setErroCompartilhar(msg)
     }
   }
 
@@ -383,20 +392,23 @@ export default function Tarefas() {
                     <div className="flex flex-wrap gap-1.5 mb-1">
                       {compartilhamentos.map((c) => (
                         <span key={c.id} className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded">
-                          {c.usuario_username || c.usuario} · {c.permissao}
+                          {c.usuario_nome} · {c.permissao}
                         </span>
                       ))}
                     </div>
                   )}
-                  <form onSubmit={handleCompartilhar} className="flex items-center gap-2">
-                    <input type="text" placeholder="Username" value={usernameCompartilhar} onChange={(e) => setUsernameCompartilhar(e.target.value)} required className={inputClass} />
+                  <form onSubmit={handleCompartilhar} className="flex flex-wrap items-center gap-2">
+                    <input type="text" placeholder="Username do usuário" value={usernameCompartilhar} onChange={(e) => setUsernameCompartilhar(e.target.value)} required className={inputClass} />
                     <select value={permissao} onChange={(e) => setPermissao(e.target.value)} className={selectClass}>
                       <option value="leitura">Leitura</option>
                       <option value="edicao">Edição</option>
                     </select>
                     <button type="submit" className="bg-primary text-white text-sm px-3 py-1.5 rounded hover:bg-primary-light transition-colors">Compartilhar</button>
-                    <button type="button" onClick={() => setCompartilhando(null)} className="p-1.5 rounded text-gray-400 hover:text-gray-600 transition-colors"><X size={13} /></button>
+                    <button type="button" onClick={() => { setCompartilhando(null); setErroCompartilhar('') }} className="p-1.5 rounded text-gray-400 hover:text-gray-600 transition-colors"><X size={13} /></button>
                   </form>
+                  {erroCompartilhar && (
+                    <p className="text-xs text-red-500">{erroCompartilhar}</p>
+                  )}
                 </div>
               )}
 
