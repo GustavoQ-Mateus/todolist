@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Tarefa, Categoria, CompartilhamentoTarefa
 from .serializers import TarefaSerializer, CategoriaSerializer, CompartilhamentoSerializer
@@ -13,7 +14,10 @@ class TarefaListCreateView(generics.ListCreateAPIView):
     filterset_class = TarefaFilter
 
     def get_queryset(self):
-        return Tarefa.objects.filter(criado_por=self.request.user)
+        user = self.request.user
+        return Tarefa.objects.filter(
+            Q(criado_por=user) | Q(compartilhamentos__usuario=user)
+        ).distinct()
 
 
 class TarefaDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -21,7 +25,10 @@ class TarefaDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Tarefa.objects.filter(criado_por=self.request.user)
+        user = self.request.user
+        return Tarefa.objects.filter(
+            Q(criado_por=user) | Q(compartilhamentos__usuario=user)
+        ).distinct()
 
 
 class CategoriaListCreateView(generics.ListCreateAPIView):
@@ -64,3 +71,14 @@ class CompartilhamentoListCreateView(generics.ListCreateAPIView):
         except Tarefa.DoesNotExist:
             pass
         return context
+
+
+class CompartilhamentoDetailView(generics.DestroyAPIView):
+    serializer_class = CompartilhamentoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CompartilhamentoTarefa.objects.filter(
+            tarefa__criado_por=self.request.user,
+            tarefa_id=self.kwargs['tarefa_id']
+        )
