@@ -13,11 +13,23 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 class TarefaSerializer(serializers.ModelSerializer):
     criado_por_username = serializers.CharField(source='criado_por.username', read_only=True)
+    minha_permissao = serializers.SerializerMethodField()
 
     class Meta:
         model = Tarefa
-        fields = ['id', 'titulo', 'descricao', 'concluida', 'prazo', 'prioridade', 'categoria', 'criado_em', 'criado_por_username']
-        read_only_fields = ['criado_em', 'criado_por_username']
+        fields = ['id', 'titulo', 'descricao', 'concluida', 'prazo', 'prioridade', 'categoria', 'criado_em', 'criado_por_username', 'minha_permissao']
+        read_only_fields = ['criado_em', 'criado_por_username', 'minha_permissao']
+
+    def get_minha_permissao(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return None
+        if obj.criado_por == request.user:
+            return 'dono'
+        try:
+            return obj.compartilhamentos.get(usuario=request.user).permissao
+        except CompartilhamentoTarefa.DoesNotExist:
+            return None
 
     def create(self, validated_data):
         validated_data['criado_por'] = self.context['request'].user
