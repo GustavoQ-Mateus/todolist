@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Share2, X, Pencil, Check, Tag } from 'lucide-react'
 import Layout from '../components/Layout'
-import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa, listarCompartilhamentos } from '../services/tarefas'
+import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa, listarCompartilhamentos, removerCompartilhamento } from '../services/tarefas'
 import { listarCategorias, criarCategoria, excluirCategoria } from '../services/categorias'
 
 export default function Tarefas() {
+  const usuarioLogado = localStorage.getItem('username')
   const [tarefas, setTarefas] = useState([])
   const [categorias, setCategorias] = useState([])
 
@@ -161,6 +162,16 @@ export default function Tarefas() {
       setCompartilhamentos(data.results || data)
     } catch {
       setCompartilhamentos([])
+    }
+  }
+
+  async function handleRemoverCompartilhamento(tarefaId, compartilhamentoId) {
+    try {
+      await removerCompartilhamento(tarefaId, compartilhamentoId)
+      const { data } = await listarCompartilhamentos(tarefaId)
+      setCompartilhamentos(data.results || data)
+    } catch {
+      setErroCompartilhar('Erro ao remover compartilhamento.')
     }
   }
 
@@ -335,20 +346,27 @@ export default function Tarefas() {
                   {tarefa.prazo && (
                     <p className="text-xs text-gray-400 mt-0.5">Prazo: {tarefa.prazo}</p>
                   )}
+                  {tarefa.criado_por_username !== usuarioLogado && (
+                    <p className="text-xs text-primary mt-0.5">Compartilhada por {tarefa.criado_por_username}</p>
+                  )}
                 </div>
                 <span className={`text-xs font-medium shrink-0 ${prioridadeCor[tarefa.prioridade]}`}>
                   {tarefa.prioridade}
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => abrirEdicao(tarefa)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Editar">
-                    <Pencil size={13} />
-                  </button>
-                  <button onClick={() => abrirCompartilhamento(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Compartilhar">
-                    <Share2 size={13} />
-                  </button>
-                  <button onClick={() => handleExcluir(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" aria-label="Excluir">
-                    <Trash2 size={13} />
-                  </button>
+                  {tarefa.criado_por_username === usuarioLogado && (
+                    <>
+                      <button onClick={() => abrirEdicao(tarefa)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Editar">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => abrirCompartilhamento(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Compartilhar">
+                        <Share2 size={13} />
+                      </button>
+                      <button onClick={() => handleExcluir(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" aria-label="Excluir">
+                        <Trash2 size={13} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -389,11 +407,22 @@ export default function Tarefas() {
               {compartilhando === tarefa.id && (
                 <div className="flex flex-col gap-2 px-4 py-3 bg-primary-muted border-t border-gray-100">
                   {compartilhamentos.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-1">
+                    <div className="flex flex-col gap-1 mb-1">
                       {compartilhamentos.map((c) => (
-                        <span key={c.id} className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded">
-                          {c.usuario_nome} · {c.permissao}
-                        </span>
+                        <div key={c.id} className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1">
+                          <span className="text-xs text-gray-700 font-medium">{c.usuario_nome}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">{c.permissao}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoverCompartilhamento(tarefa.id, c.id)}
+                              className="text-gray-300 hover:text-red-500 transition-colors"
+                              aria-label="Remover compartilhamento"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}

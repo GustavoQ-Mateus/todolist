@@ -23,3 +23,7 @@ export function compartilharTarefa(tarefaId, dados) {
 export function listarCompartilhamentos(tarefaId) {
   return api.get(`/tarefas/${tarefaId}/compartilhamentos/`)
 }
+
+export function removerCompartilhamento(tarefaId, compartilhamentoId) {
+  return api.delete(`/tarefas/${tarefaId}/compartilhamentos/${compartilhamentoId}/`)
+}
