@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($file = \"C:\\\\Users\\\\gusta\\\\OneDrive\\\\Desktop\\\\todolist\\\\todo.pem\"; $acl = Get-Acl $file; $rule = New-Object System.Security.AccessControl.FileSystemAccessRule\\($env:USERNAME, \"FullControl\", \"Allow\"\\); $acl.SetAccessRule\\($rule\\); Set-Acl $file $acl; Remove-Item $file -Force; Write-Output \"Deletado\")",
+      "Bash(echo \"teste.md\")",
+      "Bash(echo \"*.pem\")",
+      "Bash(git remote *)",
+      "Bash(git push *)"
+    ]
+  }
+}

@@ -1,12 +1,12 @@
 # ListTodo
 
-Este projeto é meu teste prático para a Advice Health. O objetivo foi construir um gerenciador de tarefas que fosse além do básico, focando em segurança (JWT), organização (Categorias) e colaboração (Compartilhamento).
+Este é meu teste prático. O desafio foi construir um gerenciador de tarefas que fosse além do básico, focando em segurança (JWT), organização (Categorias) e colaboração (Compartilhamento).
 
 ---
 
 ## Como subir o projeto
 
-Para facilitar a avaliação, a aplicação está totalmente dockerizada.
+Para facilitar, a aplicação está totalmente dockerizada.
 
 ```bash
 git clone https://github.com/GustavoQ-Mateus/todolist.git
@@ -31,7 +31,7 @@ docker compose up -d --build
 - Front-end: http://localhost:5173
 - API: http://localhost:8000/api
 
-**Demo online (AWS EC2):** http://35.153.162.1:5173
+**instancia (AWS EC2):** http://35.153.162.1:5173
 
 ---
 
@@ -53,13 +53,13 @@ Em vez de complicar a arquitetura, tentei ser direto e eficiente, seguindo o que
 
 Autenticação via Bearer Token — `Authorization: Bearer <access_token>`
 
-**Usuários**
+# Usuários
 - `POST /api/usuarios/cadastro/` — criar conta
 - `POST /api/usuarios/login/` — login, retorna `access` e `refresh`
 - `POST /api/usuarios/token/refresh/` — renovar token
 - `GET /api/usuarios/me/` — dados do usuário autenticado
 
-**Tarefas**
+# Tarefas
 - `GET /api/tarefas/` — listar (suporta filtros)
 - `POST /api/tarefas/` — criar
 - `GET /api/tarefas/<id>/` — detalhar
@@ -68,7 +68,7 @@ Autenticação via Bearer Token — `Authorization: Bearer <access_token>`
 - `GET /api/tarefas/<id>/compartilhamentos/` — listar compartilhamentos
 - `POST /api/tarefas/<id>/compartilhamentos/` — compartilhar com outro usuário
 
-**Categorias**
+# Categorias
 - `GET /api/categorias/` — listar
 - `POST /api/categorias/` — criar
 - `DELETE /api/categorias/<id>/` — excluir
@@ -81,9 +81,9 @@ Autenticação via Bearer Token — `Authorization: Bearer <access_token>`
 
 Como o teste foca em Back-end, dei uma atenção especial à cobertura do pytest:
 
-**Testes Unitários:** Cobrem desde a criação de usuário até as permissões complexas de compartilhamento.
+- Testes Unitários: Cobrem desde a criação de usuário até as permissões complexas de compartilhamento.
 
-**Selenium:** Criei um fluxo automatizado que abre o navegador, faz login e valida se a interface está respondendo corretamente.
+- Selenium: Criei um fluxo automatizado que abre o navegador, faz login e valida se a interface está respondendo corretamente.
 
 ```bash
 # Backend
@@ -100,23 +100,26 @@ pytest selenium_tests/ -v
 
 Configurei um workflow no GitHub Actions com três jobs em sequência:
 
-1. **testes-backend** — sobe PostgreSQL e roda o pytest
-2. **testes-selenium** — sobe a aplicação via Docker Compose e roda os testes com Chrome headless
-3. **deploy** — via SSH, faz pull do repositório e reinicia os containers na instância EC2 da AWS
+1. # testes-backend —
+    sobe PostgreSQL e roda o pytest
+2. # testes-selenium — 
+    sobe a aplicação via Docker Compose e roda os testes com Chrome headless
+3. # deploy — 
+    via SSH, faz pull do repositório e reinicia os containers na instância EC2 da AWS
 
 Nenhum código chega à `main` sem passar pelos testes. E a cada push aprovado, o deploy na EC2 acontece automaticamente.
 
-**Instância AWS EC2:** `35.153.162.1` (t2.micro, Ubuntu 24.04)
+- Instância AWS EC2: `35.153.162.1` (t2.micro, Ubuntu 24.04)
 
-Para replicar o ambiente de produção em uma instância nova:
+## Para replicar o ambiente em uma instância:
 
 ```bash
-# Instalar Docker
+# Download Docker
 sudo apt update && sudo apt install -y docker.io docker-compose-v2
 sudo usermod -aG docker ubuntu
 newgrp docker
 
-# Clonar e subir
+# Clone e subir
 git clone https://github.com/GustavoQ-Mateus/todolist.git
 cd todolist
 

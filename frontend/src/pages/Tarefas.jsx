@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Share2, X, Pencil, Check, Tag } from 'lucide-react'
 import Layout from '../components/Layout'
+import { useAuth } from '../contexts/AuthContext'
 import { listarTarefas, criarTarefa, atualizarTarefa, excluirTarefa, compartilharTarefa, listarCompartilhamentos, removerCompartilhamento } from '../services/tarefas'
 import { listarCategorias, criarCategoria, excluirCategoria } from '../services/categorias'
 
 export default function Tarefas() {
-  const usuarioLogado = localStorage.getItem('username')
+  const { usuario } = useAuth()
+  const usuarioLogado = usuario?.username
   const [tarefas, setTarefas] = useState([])
   const [categorias, setCategorias] = useState([])
 
