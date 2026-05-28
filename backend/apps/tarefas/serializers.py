@@ -12,10 +12,12 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
 
 class TarefaSerializer(serializers.ModelSerializer):
+    criado_por_username = serializers.CharField(source='criado_por.username', read_only=True)
+
     class Meta:
         model = Tarefa
-        fields = ['id', 'titulo', 'descricao', 'concluida', 'prazo', 'prioridade', 'categoria', 'criado_em']
-        read_only_fields = ['criado_em']
+        fields = ['id', 'titulo', 'descricao', 'concluida', 'prazo', 'prioridade', 'categoria', 'criado_em', 'criado_por_username']
+        read_only_fields = ['criado_em', 'criado_por_username']
 
     def create(self, validated_data):
         validated_data['criado_por'] = self.context['request'].user
