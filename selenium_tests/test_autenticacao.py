@@ -20,12 +20,12 @@ def teste_link_para_cadastro(navegador):
 
 def teste_pagina_cadastro_carrega(navegador):
     navegador.get(f'{BASE_URL}/cadastro')
-    assert 'Criar conta' in navegador.page_source
+    assert 'Crie sua conta' in navegador.page_source
 
 
 def teste_link_para_login(navegador):
     navegador.get(f'{BASE_URL}/cadastro')
-    link = navegador.find_element(By.LINK_TEXT, 'Já tenho conta')
+    link = navegador.find_element(By.LINK_TEXT, 'Entrar')
     link.click()
     WebDriverWait(navegador, 5).until(EC.url_contains('/login'))
     assert '/login' in navegador.current_url
