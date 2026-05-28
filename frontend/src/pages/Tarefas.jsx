@@ -201,6 +201,8 @@ export default function Tarefas() {
   }
 
   const prioridadeCor = { baixa: 'text-green-600', media: 'text-yellow-600', alta: 'text-red-500' }
+  const prioridadeLabel = { baixa: 'Baixa', media: 'Média', alta: 'Alta' }
+  const permissaoLabel = { leitura: 'Leitura', edicao: 'Edição' }
 
   const inputClass = 'border border-gray-200 rounded px-3 py-2 text-sm focus:border-primary transition-colors'
   const selectClass = 'border border-gray-200 rounded px-3 py-1.5 text-sm focus:border-primary transition-colors bg-white text-gray-700'
@@ -346,19 +348,21 @@ export default function Tarefas() {
                   {tarefa.prazo && (
                     <p className="text-xs text-gray-400 mt-0.5">Prazo: {tarefa.prazo}</p>
                   )}
-                  {tarefa.criado_por_username !== usuarioLogado && (
+                  {tarefa.minha_permissao !== 'dono' && (
                     <p className="text-xs text-primary mt-0.5">Compartilhada por {tarefa.criado_por_username}</p>
                   )}
                 </div>
                 <span className={`text-xs font-medium shrink-0 ${prioridadeCor[tarefa.prioridade]}`}>
-                  {tarefa.prioridade}
+                  {prioridadeLabel[tarefa.prioridade]}
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
-                  {tarefa.criado_por_username === usuarioLogado && (
+                  {(tarefa.minha_permissao === 'dono' || tarefa.minha_permissao === 'edicao') && (
+                    <button onClick={() => abrirEdicao(tarefa)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Editar">
+                      <Pencil size={13} />
+                    </button>
+                  )}
+                  {tarefa.minha_permissao === 'dono' && (
                     <>
-                      <button onClick={() => abrirEdicao(tarefa)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Editar">
-                        <Pencil size={13} />
-                      </button>
                       <button onClick={() => abrirCompartilhamento(tarefa.id)} className="p-1.5 rounded text-gray-400 hover:text-primary hover:bg-primary-muted transition-colors" aria-label="Compartilhar">
                         <Share2 size={13} />
                       </button>
@@ -412,7 +416,7 @@ export default function Tarefas() {
                         <div key={c.id} className="flex items-center justify-between bg-white border border-gray-200 rounded px-2 py-1">
                           <span className="text-xs text-gray-700 font-medium">{c.usuario_nome}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">{c.permissao}</span>
+                            <span className="text-xs text-gray-400">{permissaoLabel[c.permissao]}</span>
                             <button
                               type="button"
                               onClick={() => handleRemoverCompartilhamento(tarefa.id, c.id)}
