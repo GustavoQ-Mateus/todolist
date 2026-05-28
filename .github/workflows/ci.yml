@@ -103,24 +103,30 @@ jobs:
 
     steps:
       - name: Deploy na EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            if [ ! -d "/home/ubuntu/todolist" ]; then
-              git clone https://github.com/GustavoQ-Mateus/todolist.git /home/ubuntu/todolist
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh-keygen -p -N "" -m OpenSSH -f /tmp/deploy_key 2>/dev/null || true
+          ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+            if [ ! -d /home/$EC2_USER/todolist ]; then
+              git clone https://github.com/GustavoQ-Mateus/todolist.git /home/$EC2_USER/todolist
             fi
-            cd /home/ubuntu/todolist
+            cd /home/$EC2_USER/todolist
             git pull origin main
-            cat > .env <<EOF
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            POSTGRES_DB=todolist
-            POSTGRES_USER=postgres
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_HOST=db
-            POSTGRES_PORT=5432
-            VITE_API_URL=http://${{ secrets.EC2_HOST }}:8000/api
-            EOF
+            cat > .env << 'ENVEOF'
+          SECRET_KEY=$SECRET_KEY
+          POSTGRES_DB=todolist
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+          POSTGRES_HOST=db
+          POSTGRES_PORT=5432
+          VITE_API_URL=http://$EC2_HOST:8000/api
+          ENVEOF
             docker compose up -d --build
+          "
