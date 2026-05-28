@@ -106,6 +106,36 @@ Configurei um workflow no GitHub Actions com três jobs em sequência:
 
 Nenhum código chega à `main` sem passar pelos testes. E a cada push aprovado, o deploy na EC2 acontece automaticamente.
 
+**Instância AWS EC2:** `35.153.162.1` (t2.micro, Ubuntu 24.04)
+
+Para replicar o ambiente de produção em uma instância nova:
+
+```bash
+# Instalar Docker
+sudo apt update && sudo apt install -y docker.io docker-compose-v2
+sudo usermod -aG docker ubuntu
+newgrp docker
+
+# Clonar e subir
+git clone https://github.com/GustavoQ-Mateus/todolist.git
+cd todolist
+
+cat > .env << EOF
+SECRET_KEY=sua-chave-secreta
+POSTGRES_DB=todolist
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=sua-senha
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+VITE_API_URL=http://<IP-DA-INSTANCIA>:8000/api
+EOF
+
+docker compose up -d --build
+```
+
+- Front-end: `http://<IP-DA-INSTANCIA>:5173`
+- API: `http://<IP-DA-INSTANCIA>:8000/api`
+
 ---
 
 ## O que eu melhoraria com mais tempo
